@@ -1,0 +1,9 @@
+{
+    "name": "ChestSnap",
+    "version_number": "0.0.4",
+    "website_url": "https://github.com/JFHeim/ChestSnap",
+    "description": "Ever wanted to place your chests or crates on a grid?",
+    "dependencies": [
+        "denikson-BepInExPack_Valheim-5.4.2333"
+    ]
+}

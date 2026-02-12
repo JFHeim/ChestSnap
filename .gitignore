@@ -396,3 +396,6 @@ FodyWeavers.xsd
 
 # JetBrains Rider
 *.sln.iml
+Thunderstore/ChestSnap.dll
+/.idea
+/Thunderstore/*.zip
