@@ -1,4 +1,6 @@
-﻿namespace ChestSnap.Patch;
+﻿using ChestSnap.Helpers;
+
+namespace ChestSnap.Patch;
 
 [HarmonyPatch]
 file static class AddSnapPointsPatch

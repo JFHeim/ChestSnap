@@ -1,4 +1,5 @@
 ﻿using ChestSnap.Config;
+using ChestSnap.DebugVisuals;
 
 namespace ChestSnap;
 
@@ -10,5 +11,8 @@ public class Plugin : BepInEx.BaseUnityPlugin
         Log.InitializeConfiguration(this);
         new Harmony(Consts.ModGuid).PatchAll();
         ConfigsContainer.InitializeConfiguration(this);
+
+        var managerGo = new GameObject("DebugOverlay");
+        managerGo.AddComponent<DebugOverlayManager>();
     }
 }

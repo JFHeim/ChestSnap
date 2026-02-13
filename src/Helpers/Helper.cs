@@ -1,6 +1,6 @@
 using UnityEngine.SceneManagement;
 
-namespace ChestSnap;
+namespace ChestSnap.Helpers;
 
 public static class Helper
 {
