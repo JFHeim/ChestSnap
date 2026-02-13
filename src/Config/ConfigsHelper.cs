@@ -49,7 +49,7 @@ public partial class ConfigsContainer
 
     private static void SetupWatcher()
     {
-        FileSystemWatcher fileSystemWatcher = new(Paths.ConfigPath, Plugin.Info.Metadata.GUID);
+        FileSystemWatcher fileSystemWatcher = new(Paths.ConfigPath, Plugin.Info.Metadata.GUID + ".cfg");
         fileSystemWatcher.Changed += ConfigChanged;
         fileSystemWatcher.IncludeSubdirectories = true;
         fileSystemWatcher.SynchronizingObject = ThreadingHelper.SynchronizingObject;
