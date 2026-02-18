@@ -27,6 +27,7 @@
             <PrivateAssets>all</PrivateAssets>
             <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
         </PackageReference>
+        <PackageReference Include="YamlDotNet" Version="16.3.0" />
     </ItemGroup>
 
     <ItemGroup>
@@ -56,6 +57,11 @@
         <None Update="$(ManagedAssemblesDir)Unity*.pdb">
             <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
         </None>
+    </ItemGroup>
+
+    <ItemGroup>
+      <None Remove="Resources\default_snappoints.yaml" />
+      <EmbeddedResource Include="Resources\default_snappoints.yaml" />
     </ItemGroup>
 
     <Target Name="ValidateGameDir" BeforeTargets="BeforeBuild, ResolveAssemblyReferences">

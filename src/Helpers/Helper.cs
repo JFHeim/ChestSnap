@@ -1,3 +1,4 @@
+using UnityEngine.Rendering;
 using UnityEngine.SceneManagement;
 
 namespace ChestSnap.Helpers;
@@ -11,25 +12,35 @@ public static class Helper
         return isMainScene;
     }
 
-    public static bool IsServer(bool logIsShouldBeOnServerOnly = false)
+    public static bool IsServer()
     {
         var gameState = GetGameServerClientState();
-        if (logIsShouldBeOnServerOnly && gameState is GameServerClientState.Client)
-            Log.Error($"{nameof(Consts.ModName)} is fully server-side, do not install it on clients");
         return gameState is GameServerClientState.Server;
     }
 
-    public static GameServerClientState GetGameServerClientState() => ZNet.instance?.IsServer() switch
+    public static bool IsDedicatedServer()
     {
-        null => GameServerClientState.Unknown,
-        false => GameServerClientState.Client,
-        true => GameServerClientState.Server
-    };
+        var gameState = GetGameServerClientState();
+        return gameState is GameServerClientState.DedicatedServer;
+    }
+
+    public static GameServerClientState GetGameServerClientState()
+    {
+        if (SystemInfo.graphicsDeviceType == GraphicsDeviceType.Null) return GameServerClientState.DedicatedServer;
+
+        return ZNet.instance?.IsServer() switch
+        {
+            null => GameServerClientState.Unknown,
+            false => GameServerClientState.Client,
+            true => GameServerClientState.Server
+        };
+    }
 }
 
 public enum GameServerClientState
 {
     Unknown,
     Client,
-    Server
+    Server,
+    DedicatedServer
 }

@@ -148,10 +148,12 @@ public class DebugOverlayManager : MonoBehaviour
     {
         if (parent == null) return;
 
+        Log.Info($"There already are {_points.Count(x => x.transform== parent)} points registered in {parent.name} ");
+
         for (int i = 0; i < parent.childCount; i++)
         {
             var child = parent.GetChild(i);
-            if (child.tag == "snappoint" || child.name == "_snappoint")
+            if ((child.tag == "snappoint" || child.name == "_snappoint") && !child.name.Contains("[Destroyed]"))
             {
                 Log.Info($"RegisterSnapPoints - on '{parent.name}' at {child.localPosition}");
                 _points.Add(new TrackedPoint
@@ -165,7 +167,8 @@ public class DebugOverlayManager : MonoBehaviour
 
     public void UnregisterPoints(Transform parent)
     {
-        _points.RemoveAll(p => p.transform == parent);
+        var count = _points.RemoveAll(p => p.transform == parent);
+        Log.Info($"Unregistered {count} points in {parent.name} ");
     }
 
     public void ClearAll()

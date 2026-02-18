@@ -10,7 +10,7 @@ file static class FindGoodFontPatch
     private static void GetFont(ConnectPanel __instance)
     {
         if (Helper.IsMainScene() == false) return;
-        if (Helper.IsServer(true) == false) return;
+        if (Helper.IsDedicatedServer()) return;
 
         DebugOverlayManager.Instance?.labelFont = __instance.m_worldField.font;
     }

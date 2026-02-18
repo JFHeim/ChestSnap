@@ -17,30 +17,26 @@ public partial class ConfigsContainer
         private set;
     } = null!;
     private static bool IsInitialized = false;
-    private static DateTime LastConfigUpdateTime = DateTime.MinValue;
     private static BaseUnityPlugin Plugin = null!;
     private static Action? OnConfigurationChanged;
     private static DateTime LastConfigChange = DateTime.MinValue;
+    private static readonly HashSet<string> ConfigFilesToWatch = [];
 
     public static void InitializeConfiguration(BaseUnityPlugin plugin)
     {
         Plugin = plugin;
         plugin.Config.SaveOnConfigSet = false;
-        SetupWatcher();
-        plugin.Config.ConfigReloaded += (_, _) => UpdateConfiguration();
         Instance = new ConfigsContainer();
+        ConfigFilesToWatch.Add($"{Plugin.Info.Metadata.GUID}.cfg");
+        SetupWatcher();
         plugin.Config.SaveOnConfigSet = true;
+        plugin.Config.ConfigReloaded += (_, _) => UpdateConfiguration();
         plugin.Config.Save();
 
         OnConfigurationChanged += () =>
         {
             Log.Info("Configuration Received");
-
-            if(DateTime.Now - LastConfigUpdateTime < TimeSpan.FromSeconds(1)) return;
-            LastConfigUpdateTime = DateTime.Now;
-
             Instance.ApplyConfiguration();
-
             Log.Info("Configuration applied");
         };
 
@@ -49,11 +45,15 @@ public partial class ConfigsContainer
 
     private static void SetupWatcher()
     {
-        FileSystemWatcher fileSystemWatcher = new(Paths.ConfigPath, Plugin.Info.Metadata.GUID + ".cfg");
-        fileSystemWatcher.Changed += ConfigChanged;
-        fileSystemWatcher.IncludeSubdirectories = true;
-        fileSystemWatcher.SynchronizingObject = ThreadingHelper.SynchronizingObject;
-        fileSystemWatcher.EnableRaisingEvents = true;
+        foreach (var fileName in ConfigFilesToWatch.Where(x=> !string.IsNullOrEmpty(x)))
+        {
+            FileSystemWatcher fileSystemWatcher = new(Paths.ConfigPath, fileName);
+            fileSystemWatcher.Changed += ConfigChanged;
+            fileSystemWatcher.Created += ConfigChanged;
+            fileSystemWatcher.IncludeSubdirectories = true;
+            fileSystemWatcher.SynchronizingObject = ThreadingHelper.SynchronizingObject;
+            fileSystemWatcher.EnableRaisingEvents = true;
+        }
     }
 
     private static void ConfigChanged(object sender, FileSystemEventArgs e)
@@ -79,7 +79,7 @@ public partial class ConfigsContainer
         }
         catch (Exception e)
         {
-            Log.Error($"Configuration error: {e.Message}", false);
+            Log.Error(e, "Configuration error", false);
         }
     }
 
