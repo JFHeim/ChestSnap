@@ -25,8 +25,8 @@ public class DebugOverlayManager : MonoBehaviour
     public string labelFormat = "0.##";
     public TMP_FontAsset? labelFont;
 
-    private Canvas _canvas;
-    private OverlayGraphic _graphic;
+    private Canvas _canvas = null!;
+    private OverlayGraphic _graphic = null!;
     private Camera? _cam;
 
     private readonly List<TrackedObject> _objects = [];
@@ -100,7 +100,7 @@ public class DebugOverlayManager : MonoBehaviour
         _graphic.Clear();
         BeginLabels();
 
-        if (ConfigsContainer.ShowDebugVisuals == DebugVisualsDisplayMode.Hidden  || _cam == null)
+        if (ConfigsContainer.ShowDebugVisuals == DebugVisualsDisplayMode.Hidden || _cam == null)
         {
             EndLabels();
             _graphic.SetVerticesDirty();
@@ -151,14 +151,15 @@ public class DebugOverlayManager : MonoBehaviour
         for (int i = 0; i < parent.childCount; i++)
         {
             var child = parent.GetChild(i);
-            if(child.tag == "snappoint" || child.name == "_snappoint")
+            if (child.tag == "snappoint" || child.name == "_snappoint")
             {
                 Log.Info($"RegisterSnapPoints - on '{parent.name}' at {child.localPosition}");
                 _points.Add(new TrackedPoint
                 {
                     transform = parent,
                     localPos = child.localPosition
-                });}
+                });
+            }
         }
     }
 
@@ -285,7 +286,12 @@ public class DebugOverlayManager : MonoBehaviour
         textRt.offsetMin = labelPadding;
         textRt.offsetMax = -labelPadding;
 
-        RectTransformUtility.ScreenPointToLocalPointInRectangle(_canvas.GetComponent<RectTransform>(), screenPos + labelOffset, null, out Vector2 local);
+        RectTransformUtility.ScreenPointToLocalPointInRectangle(
+            _canvas.GetComponent<RectTransform>(),
+            screenPos + labelOffset,
+            null,
+            out Vector2 local
+        );
 
         lw.rt.anchoredPosition = local;
         lw.root.SetActive(true);
@@ -309,17 +315,17 @@ public class DebugOverlayManager : MonoBehaviour
             var bounds = obj.bounds;
             if (bounds == null) continue;
 
-            if(displayMode == DebugVisualsDisplayMode.OnHover && obj.transform != hoveringTransform) continue;
+            if (displayMode == DebugVisualsDisplayMode.OnHover && obj.transform != hoveringTransform) continue;
 
             foreach (var bd in bounds) DrawBoxWorld(bd.m_pos, bd.m_rot, bd.m_size, ConfigsContainer.BoundsColor);
 
-            if(displayMode == DebugVisualsDisplayMode.OnHover) break;
+            if (displayMode == DebugVisualsDisplayMode.OnHover) break;
         }
     }
 
     private void DrawBox(Transform parent, WearNTear.BoundData bd)
     {
-        if (!_cam) return;
+        if (_cam == null) return;
 
         Vector3 h = bd.m_size * 0.5f;
 
@@ -351,7 +357,7 @@ public class DebugOverlayManager : MonoBehaviour
 
     private void DrawBoxWorld(Vector3 worldCenter, Quaternion worldRot, Vector3 size, Color color)
     {
-        if (!_cam) return;
+        if (_cam == null) return;
         Vector3 h = size * sizeModifier;
 
         _corners[0] = new Vector3(-h.x, -h.y, -h.z);
@@ -394,9 +400,10 @@ public class DebugOverlayManager : MonoBehaviour
 
             Vector3 local = (worldCenter - worldPts[i]).Round(1);
 
-            string label = $"({local.x.ToString(fmt, CultureInfo.InvariantCulture)}, "
-                         + $"{local.y.ToString(fmt, CultureInfo.InvariantCulture)}, "
-                         + $"{local.z.ToString(fmt, CultureInfo.InvariantCulture)})";
+            string label =
+                $"({local.x.ToString(fmt, CultureInfo.InvariantCulture)}, "
+                + $"{local.y.ToString(fmt, CultureInfo.InvariantCulture)}, "
+                + $"{local.z.ToString(fmt, CultureInfo.InvariantCulture)})";
 
             Vector2 sp = _cam.WorldToScreenPoint(worldPts[i]);
             PlaceLabel(sp, label);
@@ -409,15 +416,18 @@ public class DebugOverlayManager : MonoBehaviour
         if (displayMode == DebugVisualsDisplayMode.Hidden) return;
         if (ConfigsContainer.DrawSnappoints == false) return;
 
-        if (!_cam) return;
+        if (_cam == null) return;
 
         var hoveringTransform = Player.m_localPlayer?.m_hoveringPiece?.transform;
 
         foreach (var pt in _points)
         {
-            if(pt.forceShow == false
-               && displayMode == DebugVisualsDisplayMode.OnHover
-               && pt.transform != hoveringTransform) continue;
+            if (
+                !pt.forceShow
+                && displayMode == DebugVisualsDisplayMode.OnHover
+                && pt.transform != hoveringTransform
+            )
+                continue;
 
             var ptLocalPos = pt.localPos;
             Vector3 world = pt.transform.TransformPoint(ptLocalPos);
@@ -428,16 +438,16 @@ public class DebugOverlayManager : MonoBehaviour
             var color = ConfigsContainer.SnapPointOverlayColor;
             _graphic.AddCircle(sp, pointRadius, color, pointSegments);
 
-            if(ConfigsContainer.DrawSnappointsLocalPosition == false) continue;
+            if (ConfigsContainer.DrawSnappointsLocalPosition == false) continue;
+
             string fmt = labelFormat;
-            string label = $"({ptLocalPos.x.ToString(fmt, CultureInfo.InvariantCulture)}, "
-                           + $"{ptLocalPos.y.ToString(fmt, CultureInfo.InvariantCulture)}, "
-                           + $"{ptLocalPos.z.ToString(fmt, CultureInfo.InvariantCulture)})";
+            string label =
+                $"({ptLocalPos.x.ToString(fmt, CultureInfo.InvariantCulture)}, "
+                + $"{ptLocalPos.y.ToString(fmt, CultureInfo.InvariantCulture)}, "
+                + $"{ptLocalPos.z.ToString(fmt, CultureInfo.InvariantCulture)})";
 
             PlaceLabel(sp, label);
         }
-
-        if (ConfigsContainer.DrawBoundsCornersLocalPosition == false) return;
     }
 
     public void DrawTestScreenBox()
@@ -496,14 +506,14 @@ public class DebugOverlayManager : MonoBehaviour
             _circles.Clear();
         }
 
-        public void AddLine(Vector2 a, Vector2 b, float width, Color color)
+        public void AddLine(Vector2 a, Vector2 b, float width, Color lineColor)
         {
             _lines.Add(new LineDef
             {
                 a = a,
                 b = b,
                 width = width,
-                color = color
+                color = lineColor
             });
         }
 
