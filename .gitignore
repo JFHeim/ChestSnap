@@ -401,3 +401,4 @@ FodyWeavers.xsd
 Thunderstore/ChestSnap.dll
 /Thunderstore/*.zip
 src/Config/CreateDefaultSnappoints.cs
+build/ChestSnap.dll

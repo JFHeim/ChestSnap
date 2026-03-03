@@ -53,7 +53,6 @@ public class DebugOverlayManager : MonoBehaviour
     {
         public Transform transform;
         public Vector3 localPos;
-        public bool forceShow;
     }
 
     private static readonly int[] _edgeA = [0, 1, 2, 3, 4, 5, 6, 7, 0, 1, 2, 3];
@@ -120,6 +119,10 @@ public class DebugOverlayManager : MonoBehaviour
     public void RegisterObject(Transform target)
     {
         if (target == null) return;
+        if (_objects.Any(x => x.transform == target)) return;
+
+        // Log.Info("Registering object " + target.name);
+
         _objects.Add(new TrackedObject
         {
             transform = target,
@@ -133,29 +136,20 @@ public class DebugOverlayManager : MonoBehaviour
         _objects.RemoveAll(o => o.transform == target);
     }
 
-    public void RegisterPoint(Transform parent, Vector3 localPos, bool forceShow = false)
-    {
-        if (parent == null) return;
-        _points.Add(new TrackedPoint
-        {
-            transform = parent,
-            localPos = localPos,
-            forceShow = forceShow
-        });
-    }
-
     public void RegisterSnapPoints(Transform parent)
     {
         if (parent == null) return;
+        if (_points.Any(x => x.transform == parent)) return;
 
-        Log.Info($"There already are {_points.Count(x => x.transform== parent)} points registered in {parent.name} ");
+        // Log.Info("Registering snappoints for object " + parent.name);
+        // Log.Info($"There already are {_points.Count(x => x.transform== parent)} points registered in {parent.name} ");
 
         for (int i = 0; i < parent.childCount; i++)
         {
             var child = parent.GetChild(i);
             if ((child.tag == "snappoint" || child.name == "_snappoint") && !child.name.Contains("[Destroyed]"))
             {
-                Log.Info($"RegisterSnapPoints - on '{parent.name}' at {child.localPosition}");
+                // Log.Info($"RegisterSnapPoints - on '{parent.name}' at {child.localPosition}");
                 _points.Add(new TrackedPoint
                 {
                     transform = parent,
@@ -168,7 +162,7 @@ public class DebugOverlayManager : MonoBehaviour
     public void UnregisterPoints(Transform parent)
     {
         var count = _points.RemoveAll(p => p.transform == parent);
-        Log.Info($"Unregistered {count} points in {parent.name} ");
+        // Log.Info($"Unregistered {count} points in {parent.name} ");
     }
 
     public void ClearAll()
@@ -311,7 +305,9 @@ public class DebugOverlayManager : MonoBehaviour
         if (displayMode == DebugVisualsDisplayMode.Hidden) return;
         if (ConfigsContainer.DrawBounds == false) return;
 
-        var hoveringTransform = Player.m_localPlayer?.m_hoveringPiece?.transform;
+        Transform? hoveringTransform = null;
+        try { hoveringTransform = Player.m_localPlayer?.m_hoveringPiece?.gameObject.transform; }
+        catch (NullReferenceException) { }
 
         foreach (var obj in _objects)
         {
@@ -421,15 +417,13 @@ public class DebugOverlayManager : MonoBehaviour
 
         if (_cam == null) return;
 
-        var hoveringTransform = Player.m_localPlayer?.m_hoveringPiece?.transform;
+        Transform? hoveringTransform = null;
+        try { hoveringTransform = Player.m_localPlayer?.m_hoveringPiece?.gameObject.transform; }
+        catch (NullReferenceException) { }
 
         foreach (var pt in _points)
         {
-            if (
-                !pt.forceShow
-                && displayMode == DebugVisualsDisplayMode.OnHover
-                && pt.transform != hoveringTransform
-            )
+            if (displayMode == DebugVisualsDisplayMode.OnHover && pt.transform != hoveringTransform)
                 continue;
 
             var ptLocalPos = pt.localPos;

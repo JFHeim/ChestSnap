@@ -75,6 +75,17 @@ public partial class ConfigsContainer
         File.WriteAllText(_snappointsDataYamlPath, defaultSnappointsYaml);
     }
 
+    public static void UpdateSnappointLookup(Dictionary<string, Vector3[]> newSnappointLookup)
+    {
+        var instance = Instance;
+        instance.CreateDefaultSnappointsYamlFile();
+
+        var yaml = instance._yamlSerializer.Serialize(newSnappointLookup);
+        yaml = Regex.Replace(yaml, @"\n(?=[a-zA-Z_])", "\n\n");
+
+        File.WriteAllText(instance._snappointsDataYamlPath, yaml);
+    }
+
     private void ApplyConfiguration()
     {
         CreateDefaultSnappointsYamlFile();

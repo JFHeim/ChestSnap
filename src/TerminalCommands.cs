@@ -1,4 +1,5 @@
-﻿using ChestSnap.DebugVisuals;
+﻿using ChestSnap.Config;
+using ChestSnap.DebugVisuals;
 using ChestSnap.Helpers;
 
 namespace ChestSnap;
@@ -10,14 +11,14 @@ file static class TerminalCommands
     [HarmonyPatch(nameof(Terminal.InitTerminal))]
     private static void Postfix()
     {
-        _ = new Terminal.ConsoleCommand("add_tmp_snap_points",
-            "[onlyBottom:bool](optional) - Generate snap points for a building piece you are currently hovering with hammer. This points are temporal and only for this very piece instance",
+        _ = new Terminal.ConsoleCommand("generate_snap_points",
+            "[onlyBottom:bool](optional) - Generate snap points for a building piece you are currently hovering with hammer. This points will be added to the config",
             args =>
             {
                 if (DebugOverlayManager.Instance == null)
                 {
                     Console.instance.AddString("DebugOverlayManager is not initialized yet, this should never happen");
-                    Log.Error("[show_snap_points] DebugOverlayManager is not initialized yet, this should never happen");
+                    Log.Error("[generate_snap_points] DebugOverlayManager is not initialized yet, this should never happen");
                     return false;
                 }
 
@@ -49,15 +50,14 @@ file static class TerminalCommands
                 var bounds = BoundsComputer.ComputeBounds(pieceTransform);
                 var snapPointsCoords = BoundsComputer.FindOuterCorners(bounds, onlyBottom);
                 snapPointsCoords = snapPointsCoords
-                    .Select(x => x.Round(1))
                     .Select(x => pieceTransform.InverseTransformPoint(x))
+                    .Select(x => x.Round(1))
                     .ToList();
-                SnappointHelper.RecreateSnappointsInObject(piece, snapPointsCoords.ToArray());
 
-                DebugOverlayManager.Instance.UnregisterObject(pieceTransform);
-                DebugOverlayManager.Instance.UnregisterPoints(pieceTransform);
-                DebugOverlayManager.Instance.RegisterObject(pieceTransform);
-                DebugOverlayManager.Instance.RegisterSnapPoints(pieceTransform);
+                Dictionary<string, Vector3[]> newSnappointLookup = new (ConfigsContainer.SnappointLookup);
+                newSnappointLookup.Remove(Utils.GetPrefabName(piece));
+                newSnappointLookup.Add(Utils.GetPrefabName(piece), snapPointsCoords.ToArray());
+                ConfigsContainer.UpdateSnappointLookup(newSnappointLookup);
 
                 return true;
             }, true);
