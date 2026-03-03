@@ -5,49 +5,69 @@ namespace ChestSnap.Helpers;
 
 public static class SnappointHelper
 {
-    // TODO: do not block the thread, make the snappoints update process gradual and cancelable wia enumerator
-    public static void RecreateSnappoints()
-    {
-        if(Helper.IsMainScene() == false) return;
-        if(Helper.IsDedicatedServer()) return;
-        if(!ZNetScene.instance) return;
+    private static Coroutine? _activeCoroutine;
 
+    public static void RecreateSnappoints(string? onlyForAPrefab = null)
+    {
+        if (!Plugin.Instance || !Helper.IsMainScene() || Helper.IsDedicatedServer() || !ZNetScene.instance) return;
+
+        if (_activeCoroutine != null) Plugin.Instance.StopCoroutine(_activeCoroutine);
+        _activeCoroutine = Plugin.Instance.StartCoroutine(RecreateSnappointsRoutine(onlyForAPrefab));
+    }
+
+    private static IEnumerator RecreateSnappointsRoutine(string? onlyForAPrefab = null)
+    {
         var snappointLookup = ConfigsContainer.SnappointLookup;
+        if (!string.IsNullOrEmpty(onlyForAPrefab))
+            snappointLookup = snappointLookup
+                .Where(x => x.Key == onlyForAPrefab)
+                .ToDictionary(x => x.Key, x => x.Value);
+
         foreach (var pair in snappointLookup)
         {
-            var prefabName = pair.Key;
-            var points = pair.Value;
+            if (!ZNetScene.instance) yield break;
 
-            var prefab = ZNetScene.instance.GetPrefab(prefabName);
-            if (!prefab)
-            {
-                // Log.Warning($"Prefab with a name '{prefabName}' not found");
-                continue;
-            }
+            var prefab = ZNetScene.instance.GetPrefab(pair.Key);
+            if (prefab) RecreateSnappointsInObject(prefab, pair.Value);
 
-            RecreateSnappointsInObject(prefab, points);
+            yield return null;
         }
 
-        var snappointLookupByHash = snappointLookup
-            .ToDictionary(
-                x => x.Key.GetStableHashCode(),
-                x => x.Value);
+        if (!ZNetScene.instance) yield break;
 
+        var snappointLookupByHash = snappointLookup.ToDictionary(
+            x => x.Key.GetStableHashCode(),
+            x => x.Value);
+
+        var onlyForAPrefabHash = onlyForAPrefab?.GetStableHashCode();
         var objectsOnScene = ZNetScene.instance.m_instances
-            // .Where(x => snappointLookupByHash.ContainsKey(x.Key.m_prefab))
-            .GroupBy(x=> x.Key.m_prefab)
+            .Where(x => string.IsNullOrEmpty(onlyForAPrefab) || x.Key.m_prefab == onlyForAPrefabHash)
+            .GroupBy(x => x.Key.m_prefab)
             .ToDictionary(
                 x => x.Key,
-                x=> x.Select(g=> g.Value.gameObject).ToArray());
+                x => x.Select(g => g.Value.gameObject).ToArray()
+            );
 
         foreach (var pair in objectsOnScene)
         {
-            var prefabHash = pair.Key;
-            var gameObjects = pair.Value;
+            if (!ZNetScene.instance) yield break;
 
-            foreach (var instance in gameObjects)
+            var prefabHash = pair.Key;
+            if (!snappointLookupByHash.TryGetValue(prefabHash, out var points))
             {
-                if(!instance) continue;
+                if (DebugOverlayManager.Instance)
+                    foreach (var instance in pair.Value)
+                    {
+                        var transform = instance.transform;
+                        DebugOverlayManager.Instance.UnregisterPoints(transform);
+                        DebugOverlayManager.Instance.UnregisterObject(transform);
+                    }
+                continue;
+            }
+
+            foreach (var instance in pair.Value)
+            {
+                if (!instance) continue;
 
                 var transform = instance.transform;
                 if (DebugOverlayManager.Instance)
@@ -56,38 +76,19 @@ public static class SnappointHelper
                     DebugOverlayManager.Instance.UnregisterObject(transform);
                 }
 
-                if (!snappointLookupByHash.TryGetValue(prefabHash, out var points)) continue;
-
                 RecreateSnappointsInObject(instance, points);
+
                 if (DebugOverlayManager.Instance)
                 {
                     DebugOverlayManager.Instance.RegisterObject(transform);
                     DebugOverlayManager.Instance.RegisterSnapPoints(transform);
                 }
+
+                yield return null;
             }
         }
 
-        foreach (var pair in snappointLookupByHash)
-        {
-            var prefabHash = pair.Key;
-            var points = pair.Value;
-
-            if (!objectsOnScene.TryGetValue(prefabHash, out var gameObjects)) continue;
-
-            foreach (var instance in gameObjects)
-            {
-                if(!instance) continue;
-                RecreateSnappointsInObject(instance, points);
-                if (DebugOverlayManager.Instance)
-                {
-                    var transform = instance.transform;
-                    DebugOverlayManager.Instance.UnregisterPoints(transform);
-                    DebugOverlayManager.Instance.UnregisterObject(transform);
-                    DebugOverlayManager.Instance.RegisterObject(transform);
-                    DebugOverlayManager.Instance.RegisterSnapPoints(transform);
-                }
-            }
-        }
+        _activeCoroutine = null;
     }
 
     public static void RecreateSnappointsInObject(GameObject obj, Vector3[] points)
@@ -95,7 +96,7 @@ public static class SnappointHelper
         for (int i = 0; i < obj.transform.childCount; i++)
         {
             var child = obj.transform.GetChild(i);
-            if (child.CompareTag("snappoint") || child.name == "_snappoint")
+            if (child.CompareTag("snappoint"))
             {
                 child.name += " [Destroyed]";
                 Destroy(child.gameObject);
@@ -112,7 +113,5 @@ public static class SnappointHelper
                 },
                 tag = "snappoint"
             }.SetActive(false);
-
-        // Log.Info($"{points.Length} snap points added to " + obj);
     }
 }
