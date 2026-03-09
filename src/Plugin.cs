@@ -17,7 +17,7 @@ public class Plugin : BepInEx.BaseUnityPlugin
 
         if (Helper.IsDedicatedServer())
         {
-            Log.Error($"{Consts.ModGuid} is intended to be ran only on clients, you as a server admin shall not install it an a dedicated server");
+            Log.Error($"{Consts.ModGuid} is intended to be run only on clients; as a server admin, you should not install it on a dedicated server");
             return;
         }
 
