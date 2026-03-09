@@ -3,7 +3,7 @@
 namespace ChestSnap.DebugVisuals.Patch;
 
 [HarmonyPatch, HarmonyWrapSafe]
-file static class FindGoodFontPatch
+internal static class FindGoodFontPatch
 {
     [HarmonyPostfix]
     [HarmonyPatch(typeof(ConnectPanel), nameof(ConnectPanel.Start))]

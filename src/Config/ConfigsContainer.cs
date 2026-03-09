@@ -1,11 +1,9 @@
-using System.Globalization;
 using System.Text.RegularExpressions;
 using BepInEx;
 using BepInEx.Configuration;
 using ChestSnap.DebugVisuals;
 using ChestSnap.Helpers;
 using ChestSnap.Helpers.Yaml;
-using YamlDotNet;
 using YamlDotNet.Serialization;
 using YamlDotNet.Serialization.NamingConventions;
 
@@ -34,12 +32,12 @@ public partial class ConfigsContainer
     private readonly ISerializer _yamlSerializer;
     private readonly IDeserializer _yamlDeserializer;
     private readonly string _snappointsDataYamlPath;
+    private readonly string _snappointsDataYamlFilename = $"{Consts.ModGuid}__snappoints_data.yaml";
 
     private ConfigsContainer()
     {
-        var snappointsDataYamlFilename = $"{Plugin.Info.Metadata.GUID}__snappoints_data.yaml";
-        _snappointsDataYamlPath = Path.Combine(Paths.ConfigPath, snappointsDataYamlFilename);
-        ConfigFilesToWatch.Add(snappointsDataYamlFilename);
+        _snappointsDataYamlPath = Path.Combine(Paths.ConfigPath, _snappointsDataYamlFilename);
+        ConfigFilesToWatch.Add(_snappointsDataYamlFilename);
 
         _showDebugVisuals = config("Debug Overlay", "Show debug visuals", DebugVisualsDisplayMode.Hidden, "");
         _drawBounds = config("Debug Overlay", "Draw object bounds", false, "");
@@ -59,6 +57,13 @@ public partial class ConfigsContainer
             .Build();
 
         CreateDefaultSnappointsYamlFile();
+
+        OnConfigurationFileDeleted += args =>
+        {
+            if(args.FullPath != _snappointsDataYamlPath) return;
+            Log.Info($"{_snappointsDataYamlFilename} config has been deleted, replacing with a default one");
+            CreateDefaultSnappointsYamlFile();
+        };
     }
 
     private void CreateDefaultSnappointsYamlFile()
@@ -91,25 +96,38 @@ public partial class ConfigsContainer
         CreateDefaultSnappointsYamlFile();
 
         string yamlFromFile;
-        try
-        {
-            yamlFromFile = File.ReadAllText(_snappointsDataYamlPath);
-        }
+        try { yamlFromFile = File.ReadAllText(_snappointsDataYamlPath); }
         catch (Exception e)
         {
             Log.Error(e, $"Failed to open snappoints file at '{_snappointsDataYamlPath}'");
             return;
         }
 
+        yamlFromFile = yamlFromFile.Trim();
+        if (string.IsNullOrWhiteSpace(yamlFromFile))
+        {
+            Log.Warning(
+                "Snappoints file is empty, it is most likely a bug from your side. " +
+                $"At least it does not look convincing that you installed a snapping mod to have no snpp points. So fill {_snappointsDataYamlPath} with data. " +
+                "You can just delete it and it will be recreated with default values including support for 19 building pieces");
+            return;
+        }
+
         try
         {
-            var dictionary = _yamlDeserializer.Deserialize<Dictionary<string, Vector3[]>>(yamlFromFile);
+            Dictionary<string, Vector3[]>? dictionary = _yamlDeserializer.Deserialize<Dictionary<string, Vector3[]>?>(yamlFromFile);
+            if (dictionary == null)
+            {
+                Log.Error("Snappoints file deserialization failed: \"dictionary is null\". Check it for syntax errors or just delete it, it will be recreated with default values");
+                return;
+            }
+
             _customSnappointLookup.Clear();
             _customSnappointLookup = dictionary;
         }
         catch (Exception e)
         {
-            Log.Error(e, "Failed to parse snappoints file, check it for syntax errors");
+            Log.Error(e, "Failed to parse snappoints file, check it for syntax errors or just delete it, it will be recreated with default values");
             return;
         }
 

@@ -3,7 +3,7 @@
 namespace ChestSnap.Patch;
 
 [HarmonyPatch]
-file static class AddSnapPointsPatch
+internal static class AddSnapPointsPatch
 {
     [HarmonyPostfix]
     [HarmonyPatch(typeof(ZNetScene), nameof(ZNetScene.Awake))]

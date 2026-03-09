@@ -5,7 +5,7 @@ using ChestSnap.Helpers;
 namespace ChestSnap;
 
 [HarmonyPatch(typeof(Terminal)), HarmonyWrapSafe]
-file static class TerminalCommands
+internal static class TerminalCommands
 {
     [HarmonyPostfix]
     [HarmonyPatch(nameof(Terminal.InitTerminal))]

@@ -1,27 +1,39 @@
+using System.Reflection;
+
 namespace ChestSnap.Helpers;
 
 public static class EmbeddedFileLoader
 {
-    public static Stream? GetStream(string fileName)
+    public static Stream? GetStream(string fileName, bool searchInAllAssemblies = false)
     {
-        var assembles = AppDomain.CurrentDomain.GetAssemblies();
+        IEnumerable<Assembly> assembles;
+        if (searchInAllAssemblies) assembles = AppDomain.CurrentDomain
+                .GetAssemblies()
+                .Where(asm => !asm.IsDynamic);
+        else assembles = [Assembly.GetExecutingAssembly()];
+
         foreach (var assembly in assembles)
         {
-            string[] resourceNames = assembly.GetManifestResourceNames();
-            var firstOrDefault = resourceNames.FirstOrDefault(x => x.ToLower().EndsWith(fileName.ToLower()));
-            if (firstOrDefault is null) continue;
-
-            var resourceStream = assembly.GetManifestResourceStream(firstOrDefault);
-            if (resourceStream is null)
+            try
             {
-                Log.Warning($"Не удалось получить поток для ресурса: {fileName}");
-                return null;
-            }
+                string[] resourceNames = assembly.GetManifestResourceNames();
+                var firstOrDefault = resourceNames.FirstOrDefault(x => x.ToLower().EndsWith(fileName.ToLower()));
+                if (firstOrDefault is null) continue;
 
-            return resourceStream;
+                var resourceStream = assembly.GetManifestResourceStream(firstOrDefault);
+                if (resourceStream is null)
+                {
+                    Log.Warning($"Не удалось получить поток для ресурса: {fileName}");
+                    return null;
+                }
+
+                return resourceStream;
+            }
+            catch (Exception e)
+            { Log.Error(e, $"Failed to extract resource from assembly '{assembly.FullName}'"); }
         }
 
-        Log.Warning($"Ресурс '{fileName}' не найден в манифесте");
+        Log.Warning($"Resource '{fileName}' not found");
         return null;
     }
 
@@ -38,9 +50,9 @@ public static class EmbeddedFileLoader
         return result;
     }
 
-    public static string? GetText(string fileName)
+    public static string? GetText(string fileName, bool searchInAllAssemblies = false)
     {
-        using var resourceStream = GetStream(fileName);
+        using var resourceStream = GetStream(fileName, searchInAllAssemblies);
         if (resourceStream is null) return null;
 
         try
@@ -49,7 +61,7 @@ public static class EmbeddedFileLoader
             return streamReader.ReadToEnd();
         }
         catch (Exception ex)
-            { Log.Error(ex, $"Failed to read from stream {fileName}"); }
+        { Log.Error(ex, $"Failed to read from stream {fileName}"); }
 
         return null;
     }
