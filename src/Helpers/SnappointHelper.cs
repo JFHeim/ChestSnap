@@ -45,7 +45,7 @@ public static class SnappointHelper
             .GroupBy(x => x.Key.m_prefab)
             .ToDictionary(
                 x => x.Key,
-                x => x.Select(g => g.Value.gameObject).ToArray()
+                x => x.Where(g => g.Value).Select(g => g.Value.gameObject).ToArray()
             );
 
         foreach (var pair in objectsOnScene)
@@ -58,6 +58,7 @@ public static class SnappointHelper
                 if (DebugOverlayManager.Instance)
                     foreach (var instance in pair.Value)
                     {
+                        if (!instance) continue;
                         var transform = instance.transform;
                         DebugOverlayManager.Instance.UnregisterPoints(transform);
                         DebugOverlayManager.Instance.UnregisterObject(transform);
