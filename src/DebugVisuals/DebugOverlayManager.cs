@@ -80,7 +80,6 @@ public class DebugOverlayManager : MonoBehaviour
         }
 
         Instance = this;
-        DontDestroyOnLoad(gameObject);
         BuildCanvas();
     }
 

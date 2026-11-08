@@ -25,7 +25,8 @@ public class Plugin : BepInEx.BaseUnityPlugin
         _harmony.PatchAll();
         ConfigsContainer.InitializeConfiguration(this);
 
-        var managerGo = new GameObject("DebugOverlay");
-        managerGo.AddComponent<DebugOverlayManager>();
+        var debugOverlayGo = new GameObject("DebugOverlay");
+        debugOverlayGo.AddComponent<DebugOverlayManager>();
+        DontDestroyOnLoad(debugOverlayGo);
     }
 }

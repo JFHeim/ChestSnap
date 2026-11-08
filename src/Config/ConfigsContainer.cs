@@ -93,6 +93,8 @@ public partial class ConfigsContainer
 
     private void ApplyConfiguration()
     {
+        DebugOverlayManager.Instance?.gameObject.SetActive(ShowDebugVisuals is not DebugVisualsDisplayMode.Hidden);
+
         CreateDefaultSnappointsYamlFile();
 
         string yamlFromFile;

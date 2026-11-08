@@ -10,6 +10,7 @@ internal static class TrackObjForDebugVisualsPatch
     [HarmonyPatch(typeof(WearNTear), nameof(WearNTear.Start))]
     private static void Track(WearNTear __instance)
     {
+        if (ConfigsContainer.ShowDebugVisuals is DebugVisualsDisplayMode.Hidden) return;
         if (Helper.IsMainScene() == false) return;
         if (Helper.IsDedicatedServer()) return;
         if(DebugOverlayManager.Instance == null) return;
@@ -25,6 +26,7 @@ internal static class TrackObjForDebugVisualsPatch
     [HarmonyPatch(typeof(WearNTear), nameof(WearNTear.OnDestroy))]
     private static void Untrack(WearNTear __instance)
     {
+        if (ConfigsContainer.ShowDebugVisuals is DebugVisualsDisplayMode.Hidden) return;
         if (Helper.IsMainScene() == false) return;
         if (Helper.IsDedicatedServer()) return;
         if(DebugOverlayManager.Instance == null) return;
