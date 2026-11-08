@@ -26,7 +26,7 @@ internal static class TerminalCommands
                 if (args.Length >= 2)
                 {
                     var boolStr = args[1];
-                    if (string.IsNullOrEmpty(boolStr)) onlyBottom = true;
+                    if (string.IsNullOrEmpty(boolStr)) onlyBottom = false;
                     else
                     {
                         if (!bool.TryParse(boolStr, out var onlyBottom_parse))
