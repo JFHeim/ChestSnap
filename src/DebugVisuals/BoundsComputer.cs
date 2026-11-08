@@ -1,10 +1,8 @@
-using ChestSnap.Helpers;
-
 namespace ChestSnap.DebugVisuals;
 
 public static class BoundsComputer
 {
-    [System.Serializable]
+    [Serializable]
     public class Config
     {
         public float minSize = 0.1f;

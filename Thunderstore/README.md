@@ -57,4 +57,5 @@ There is no need to install on a dedicated server.
 
 <img alt="Discord Logo" src="https://freelogopng.com/images/all_img/1691730813discord-icon-png.png" width="16"> Discord — `justafrogger`<br>
 <img alt="GitHub Logo" src="https://github.githubassets.com/assets/pinned-octocat-093da3e6fa40.svg" width="16"/> <a href="https://github.com/JFHeim/ChestSnap">Source Code</a><br>
-<ins>If something does not work for you, you have found any bugs, or have suggestions — write to me!</ins>
+
+<ins>If something does not work for you, you have found any bugs, or have suggestions — DM me or open a github issue</ins>
